@@ -5,3 +5,4 @@ src/__pycache__
 src/popular_times/__pycache__
 src/traffic_data/__pycache__
 src/popular_times/input
+src/popular_times/get_popular_times.py

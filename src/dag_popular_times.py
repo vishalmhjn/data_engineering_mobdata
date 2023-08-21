@@ -4,7 +4,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 
-from popular_times.get_popular_times import wrapper
+from popular_times.main_wrapper import main
 
 default_args = {
     "owner": "vishal",
@@ -22,7 +22,7 @@ with DAG(
 ) as dag:
     print_starting = BashOperator(
         task_id="starting",
-        bash_command='echo "I am downloading popular times now....."',
+        bash_command='echo "I am downloading and saving popular times now....."',
     )
-    csvJson = PythonOperator(task_id="obtainPopularTimes", python_callable=wrapper)
+    csvJson = PythonOperator(task_id="obtainPopularTimes", python_callable=main)
 print_starting >> csvJson
