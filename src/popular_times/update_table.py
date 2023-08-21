@@ -1,6 +1,7 @@
 import psycopg2
 from popular_times.create_tables import db_params
 from io import StringIO
+import sys
 
 
 def update_table_wrapper(df):
@@ -15,23 +16,50 @@ def update_table_wrapper(df):
     # Establish a database connection
     connection = psycopg2.connect(**db_params)
 
-    try:
-        # Create a cursor object
-        cursor = connection.cursor()
+    # Create a cursor object
+    cursor = connection.cursor()
 
-        # Use the PostgreSQL COPY command to copy data from the buffer to the table
-        copy_sql = f"COPY {table_name} FROM stdin WITH CSV HEADER DELIMITER as ','"
-        cursor.copy_expert(sql=copy_sql, file=csv_buffer)
+    # Check if a similar record exists
+    check_query = f"SELECT * FROM {table_name} WHERE datetime = %s"
+    cursor.execute(check_query, (df.datetime[0],))
+    existing_record = cursor.fetchone()
+    print(df.datetime[0])
 
-        # Commit the transaction
-        connection.commit()
+    if existing_record is None:
+        # Insert the data if no similar record exists
 
-        print("Data from CSV file loaded into the table successfully!")
+        try:
+            # Use the PostgreSQL COPY command to copy data from the buffer to the table
+            copy_sql = f"COPY {table_name} FROM stdin WITH CSV HEADER DELIMITER as ','"
+            cursor.copy_expert(sql=copy_sql, file=csv_buffer)
 
-    except psycopg2.Error as error:
-        print("Error: ", error)
+            # Commit the transaction
+            connection.commit()
 
-    finally:
-        if connection:
-            cursor.close()
-            connection.close()
+            print("Data from CSV file loaded into the table successfully!")
+
+        except psycopg2.Error as error:
+            print("Error: ", error)
+
+        finally:
+            if connection:
+                cursor.close()
+                connection.close()
+    else:
+        # Handle the duplicate record as needed (e.g., update or skip)
+        print("Duplicate record found. You can choose to update or skip.")
+        cursor.close()
+        connection.close()
+
+
+if __name__ == "__main__":
+    import glob
+    import pandas as pd
+    from process_scrapped import wrapper_process_scrapped
+
+    filenames = sorted(glob.glob("/home/vishal/Downloads/9_euro/*.csv"))
+    for file in filenames:
+        df = pd.read_csv(file)
+        print(file)
+        df = wrapper_process_scrapped(df, file)
+        update_table_wrapper(df)
