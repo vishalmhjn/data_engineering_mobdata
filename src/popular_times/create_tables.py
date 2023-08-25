@@ -29,17 +29,21 @@ if __name__ == "__main__":
         "rating": "float",
         "rating_n": "integer",
         "curr_pop": "integer",
+        "time_spent_min": "integer",
+        "time_spent_max": "integer",
     }
 
+    table_name = "pois_munich"
     # Generate column definitions for the time slots (Mon-Sun, 0-23)
     time_slots = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    for day in time_slots:
-        for hour in range(24):
-            column_data_types[f"pp_{day}_{hour}"] = "integer"
+    for attr in ["pp"]:
+        for day in time_slots:
+            for hour in range(24):
+                column_data_types[f"{attr}_{day}_{hour}"] = "integer"
 
     # Create the SQL statement for creating the table
     create_table_sql = f"""
-    CREATE TABLE IF NOT EXISTS transit_stops_DE (
+    CREATE TABLE IF NOT EXISTS {table_name} (
         {', '.join([f'{col} {data_type}' for col, data_type in column_data_types.items()])}
     );
     """
@@ -61,7 +65,7 @@ if __name__ == "__main__":
         cursor.close()
         connection.close()
 
-        print("Table 'my_table' created successfully!")
+        print(f"Table {table_name} created successfully!")
 
     except psycopg2.Error as error:
         print("Error: ", error)
